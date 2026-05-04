@@ -1,0 +1,147 @@
+[
+    {
+        "categoria": "saudacao",
+        "gatilho": "oi",
+        "resposta": "Olá. Estou aqui para ajudar. Você pode me dizer o que precisa?"
+    },
+    {
+        "categoria": "saudacao",
+        "gatilho": "bom dia",
+        "resposta": "Bom dia. Vamos conversar com calma. Você quer organizar uma tarefa, explicar uma situação ou apenas conversar?"
+    },
+    {
+        "categoria": "saudacao",
+        "gatilho": "boa tarde",
+        "resposta": "Boa tarde. Estou aqui para ajudar de forma clara e simples. Escreva uma mensagem curta sobre o que você precisa."
+    },
+    {
+        "categoria": "saudacao",
+        "gatilho": "boa noite",
+        "resposta": "Boa noite. Podemos conversar com calma. Me diga em poucas palavras como posso ajudar."
+    },
+    {
+        "categoria": "sobrecarga",
+        "gatilho": "barulho",
+        "resposta": "Vamos reduzir o estímulo. Se for possível, procure um ambiente mais silencioso ou use uma proteção auditiva. Faça uma coisa por vez."
+    },
+    {
+        "categoria": "sobrecarga",
+        "gatilho": "muita gente",
+        "resposta": "Entendi. Muita gente pode deixar o ambiente mais difícil. Se puder, vá para um local mais calmo e respire devagar por alguns segundos."
+    },
+    {
+        "categoria": "sobrecarga",
+        "gatilho": "muita coisa",
+        "resposta": "Vamos diminuir a quantidade de informação. Escolha apenas uma coisa para resolver agora. O restante pode esperar."
+    },
+    {
+        "categoria": "sobrecarga",
+        "gatilho": "não consigo pensar",
+        "resposta": "Tudo bem. Não tente resolver tudo agora. Primeiro, pare por alguns segundos. Depois escolha apenas uma ação pequena."
+    },
+    {
+        "categoria": "sobrecarga",
+        "gatilho": "estou cansado",
+        "resposta": "Entendi. Quando há cansaço, é melhor reduzir a exigência. Escolha uma tarefa pequena ou faça uma pausa breve, se for possível."
+    },
+    {
+        "categoria": "emocional",
+        "gatilho": "estou ansioso",
+        "resposta": "Entendi. Vamos com calma. Respire devagar e tente nomear o que está causando ansiedade em uma frase curta."
+    },
+    {
+        "categoria": "emocional",
+        "gatilho": "estou nervoso",
+        "resposta": "Entendi. Primeiro vamos reduzir a pressão. Me diga apenas: o que aconteceu antes de você ficar nervoso?"
+    },
+    {
+        "categoria": "emocional",
+        "gatilho": "estou irritado",
+        "resposta": "Entendi. Vamos evitar responder no impulso. Faça uma pausa curta e depois diga o que mais te incomodou."
+    },
+    {
+        "categoria": "tarefas",
+        "gatilho": "estudar",
+        "resposta": "Vamos começar com uma parte pequena. Escolha apenas um assunto e estude por 10 minutos."
+    },
+    {
+        "categoria": "tarefas",
+        "gatilho": "preciso estudar",
+        "resposta": "Vamos organizar o estudo. Primeiro escolha uma matéria. Depois escolha apenas um tópico dessa matéria."
+    },
+    {
+        "categoria": "tarefas",
+        "gatilho": "preciso trabalhar",
+        "resposta": "Vamos organizar o trabalho em etapas. Escreva qual é a entrega principal e escolha o primeiro passo mais simples."
+    },
+    {
+        "categoria": "tarefas",
+        "gatilho": "tenho muita coisa para fazer",
+        "resposta": "Vamos reduzir. Liste mentalmente as tarefas, mas escolha só uma para começar. A melhor tarefa inicial é a menor ou mais urgente."
+    },
+    {
+        "categoria": "tarefas",
+        "gatilho": "não sei por onde começar",
+        "resposta": "Vamos escolher um começo simples. Responda: qual parte parece mais fácil de fazer agora?"
+    },
+    {
+        "categoria": "tarefas",
+        "gatilho": "organizar tarefa",
+        "resposta": "Vamos dividir em passos. Primeiro diga a tarefa principal. Depois vamos escolher o primeiro passo."
+    },
+    {
+        "categoria": "comunicacao",
+        "gatilho": "não entendi",
+        "resposta": "Você pode pedir explicação assim: 'Pode explicar isso de outro jeito?'"
+    },
+    {
+        "categoria": "comunicacao",
+        "gatilho": "não sei responder",
+        "resposta": "Tudo bem. Você pode usar uma resposta simples: 'Preciso pensar um pouco antes de responder.'"
+    },
+    {
+        "categoria": "comunicacao",
+        "gatilho": "não gostei",
+        "resposta": "Você pode responder de forma clara e respeitosa: 'Eu não gostei disso. Prefiro que seja feito de outro jeito.'"
+    },
+    {
+        "categoria": "comunicacao",
+        "gatilho": "quero explicar",
+        "resposta": "Vamos organizar sua explicação. Use este formato: 1. O que aconteceu. 2. Como você se sentiu. 3. O que você precisa."
+    },
+    {
+        "categoria": "comunicacao",
+        "gatilho": "falar com alguém",
+        "resposta": "Vamos preparar uma frase curta. Comece com: 'Preciso falar sobre uma coisa importante.'"
+    },
+    {
+        "categoria": "rotina",
+        "gatilho": "minha rotina",
+        "resposta": "Vamos organizar sua rotina em blocos simples: manhã, tarde e noite. Escolha um período para começarmos."
+    },
+    {
+        "categoria": "rotina",
+        "gatilho": "mudança de plano",
+        "resposta": "Mudanças podem ser difíceis. Vamos entender: o que mudou, quando mudou e qual é a próxima ação possível?"
+    },
+    {
+        "categoria": "rotina",
+        "gatilho": "atrasado",
+        "resposta": "Vamos focar no próximo passo. Primeiro veja o que ainda pode ser feito agora. Depois ajuste o restante."
+    },
+    {
+        "categoria": "apoio",
+        "gatilho": "me ajuda",
+        "resposta": "Claro. Vamos fazer isso em partes pequenas. Escreva em uma frase o que você precisa resolver."
+    },
+    {
+        "categoria": "apoio",
+        "gatilho": "estou confuso",
+        "resposta": "Vamos organizar a confusão. Escreva apenas uma coisa que você entendeu e uma coisa que não entendeu."
+    },
+    {
+        "categoria": "apoio",
+        "gatilho": "não sei",
+        "resposta": "Tudo bem não saber agora. Vamos escolher entre duas opções: você quer entender melhor ou organizar em passos?"
+    }
+]

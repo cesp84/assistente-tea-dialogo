@@ -4,6 +4,7 @@ document.getElementById("chat-form").addEventListener("submit", async function (
     const form = event.target;
     const formData = new FormData(form);
     const respostaElemento = document.getElementById("resposta");
+    const mensagemElemento = document.getElementById("mensagem");
 
     respostaElemento.innerText = "Processando...";
 
@@ -18,4 +19,8 @@ document.getElementById("chat-form").addEventListener("submit", async function (
     const data = await response.json();
 
     respostaElemento.innerText = data.resposta;
+
+    // Limpa a caixa de texto depois do envio
+    mensagemElemento.value = "";
+    mensagemElemento.focus();
 });
