@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Contexto privado
+anotacoes_local/
+.codex/
+AGENTS.md
+
+# Django extra
+media/
+staticfiles/
+
+# VS Code
+.vscode/
