@@ -1,0 +1,49 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Assistente TEA</title>
+</head>
+
+<body>
+    <main>
+        <h1>Assistente TEA</h1>
+
+        <p>
+            Protótipo de assistente com comunicação clara, estruturada e previsível.
+        </p>
+
+        <form id="chat-form">
+            {% csrf_token %}
+
+            <label for="modo">Modo de conversa</label>
+            <select id="modo" name="modo">
+                <option value="simples">Conversa simples</option>
+                <option value="sobrecarga">Estou sobrecarregado</option>
+                <option value="tarefas">Organizar tarefa</option>
+            </select>
+
+            <br><br>
+
+            <label for="mensagem">Mensagem</label>
+            <br>
+            <textarea id="mensagem" name="mensagem" rows="5" cols="60"></textarea>
+
+            <br><br>
+
+            <button type="submit">Enviar</button>
+        </form>
+
+        <hr>
+
+        <h2>Resposta</h2>
+        <pre id="resposta"></pre>
+    </main>
+
+    <script src="{% static 'assistente_tea/js/chat.js' %}"></script>
+</body>
+
+</html>
