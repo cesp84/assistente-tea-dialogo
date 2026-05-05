@@ -16,6 +16,34 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+# --- INÍCIO: Carregamento Seguro de Chaves ---
+def load_env_from_file(filename="chave"):
+    """Lê variáveis de ambiente de um arquivo simples KEY=VALUE"""
+    env_path = BASE_DIR / filename
+    if env_path.exists():
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ.setdefault(key.strip(), value.strip())
+    else:
+        print(
+            f"Aviso: Arquivo '{filename}' não encontrado. Verifique suas variáveis de ambiente."
+        )
+
+
+# Executa a carga da chave
+load_env_from_file("chave")
+
+# Agora você pode usar a chave seguramente:
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise Exception(
+        "A variável OPENAI_API_KEY não foi encontrada. Verifique o arquivo 'chave'."
+    )
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -103,9 +131,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+# LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = "pt-br"
+# TIME_ZONE = "UTC"
+TIME_ZONE = "America/Sao_Paulo"
 
 USE_I18N = True
 
@@ -116,3 +146,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+# Adicionado para garantir que o Django encontre estáticos na raiz se necessário
+# Embora APP_DIRS=True já busque em assistente_tea/static/, isso é uma boa prática
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

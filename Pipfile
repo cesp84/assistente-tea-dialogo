@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 django = "*"
+openai = "*"
 
 [dev-packages]
 

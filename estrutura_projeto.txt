@@ -29,6 +29,7 @@
 │   ├── urls.py
 │   └── views.py
 ├── base_conhecimento.json
+├── chave
 ├── config
 │   ├── asgi.py
 │   ├── __init__.py
@@ -47,4 +48,4 @@
 ├── Pipfile.lock
 └── README.md
 
-14 directories, 34 files
+14 directories, 35 files

@@ -228,3 +228,7 @@ staticfiles/
 
 # VS Code
 .vscode/
+
+chave
+*.key
+.env
