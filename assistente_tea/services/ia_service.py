@@ -29,7 +29,9 @@ class IAService:
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 180,
+                "maxOutputTokens": 400,
+                "topK": 40,
+                "topP": 0.95,
             },
         }
 
@@ -40,21 +42,34 @@ class IAService:
                 timeout=20,
             )
 
+            if response.status_code == 503:
+                logger.warning("Gemini indisponível (alta demanda): %s", response.text)
+                return (
+                    "O serviço de IA está indisponível agora.\n\n"
+                    "Vamos continuar de forma simples:\n"
+                    "me diga o que você quer resolver primeiro."
+                )
+
             if response.status_code != 200:
                 logger.warning(
                     "Erro ao chamar Gemini. Status: %s | Resposta: %s",
                     response.status_code,
                     response.text,
                 )
-                return (
-                    "Não consegui gerar uma resposta pela IA agora.\n\n"
-                    "Vou responder de forma simples:\n"
-                    "me diga o que você precisa resolver primeiro."
-                )
+                return "Não consegui gerar resposta agora. Tente novamente."
 
             data = response.json()
+            resposta = data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if len(resposta) < 20 or resposta.endswith(
+                ("Você pode", "Você pode ", "Certo.")
+            ):
+                return (
+                    "Posso te ajudar melhor com mais detalhes.\n\n"
+                    "O que aconteceu no seu dia?"
+                )
+
+            return resposta
 
         except requests.Timeout:
             logger.warning("Tempo limite ao chamar Gemini.")
@@ -75,18 +90,37 @@ class IAService:
 
     def _montar_prompt(self, mensagem_usuario: str, historico: list) -> str:
         base = (
-            "Você é um assistente virtual para apoio comunicacional de pessoas com TEA.\n"
-            "Use o histórico recente apenas para manter contexto.\n"
-            "Não diga que possui memória permanente.\n"
-            "Não faça diagnóstico.\n"
-            "Não substitua profissional de saúde.\n"
-            "Responda em português do Brasil.\n"
-            "Use linguagem clara, direta e literal.\n"
-            "Use frases curtas.\n"
-            "Evite metáforas, ironias e duplo sentido.\n"
-            "Se a pessoa parecer sobrecarregada, reduza a quantidade de informação.\n"
-            "Responda com no máximo 4 frases ou uma lista curta.\n\n"
+            "Você é um assistente conversacional para apoio comunicacional de pessoas com TEA.\n"
+            "Seu papel é conversar de forma guiada, clara e previsível.\n\n"
+            "Regras obrigatórias:\n"
+            "1. Responda em português do Brasil.\n"
+            "2. Use linguagem literal, simples e direta.\n"
+            "3. Não use metáforas, ironias ou duplo sentido.\n"
+            "4. Não faça diagnóstico.\n"
+            "5. Não substitua profissional de saúde.\n"
+            "6. Não suponha sentimentos que o usuário não informou.\n"
+            "7. Use apenas as informações dadas pelo usuário.\n"
+            "8. Responda com no máximo 5 frases.\n"
+            "9. Sempre finalize a resposta completa.\n\n"
+            "Estilo de conversa guiada:\n"
+            "- Comece validando a mensagem de forma neutra.\n"
+            "- Organize a resposta em passos pequenos quando útil.\n"
+            "- Faça apenas UMA pergunta por vez.\n"
+            "- Se a mensagem for vaga, peça esclarecimento.\n"
+            "- Se o usuário pedir ajuda para melhorar, pergunte primeiro o que ele quer melhorar.\n"
+            "- Se o usuário falar sobre rotina, ajude a dividir em partes.\n"
+            "- Se o usuário falar sobre tarefa, sugira um primeiro passo simples.\n"
+            "- Se o usuário parecer sobrecarregado, reduza a quantidade de informação.\n\n"
+            "Formato preferencial da resposta:\n"
+            "1. Uma frase curta de acolhimento neutro.\n"
+            "2. Uma orientação simples.\n"
+            "3. Uma pergunta clara para continuar a conversa.\n\n"
+            "Exemplo de boa resposta:\n"
+            "Entendi.\n"
+            "Vamos organizar isso em uma parte pequena.\n"
+            "Qual é a primeira coisa que você quer resolver?\n\n"
         )
+
         contexto = ""
 
         if historico:
@@ -96,11 +130,7 @@ class IAService:
                 role = item.get("role", "user")
                 content = item.get("content", "")
 
-                if role == "assistant":
-                    papel = "Assistente"
-                else:
-                    papel = "Usuário"
-
+                papel = "Assistente" if role == "assistant" else "Usuário"
                 mensagens_formatadas.append(f"{papel}: {content}")
 
             contexto = "\n".join(mensagens_formatadas)
