@@ -14,6 +14,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+import os
 
 
 # --- INÍCIO: Carregamento Seguro de Chaves ---
@@ -37,8 +38,8 @@ def load_env_from_file(filename="chave"):
 load_env_from_file("chave")
 
 # Agora você pode usar a chave seguramente:
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
     raise Exception(
         "A variável OPENAI_API_KEY não foi encontrada. Verifique o arquivo 'chave'."
     )
