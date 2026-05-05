@@ -10,40 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-import os
 
 
-# --- INÍCIO: Carregamento Seguro de Chaves ---
 def load_env_from_file(filename="chave"):
-    """Lê variáveis de ambiente de um arquivo simples KEY=VALUE"""
+    """Lê variáveis de ambiente de um arquivo simples KEY=VALUE."""
     env_path = BASE_DIR / filename
+
     if env_path.exists():
-        with open(env_path, "r") as f:
+        with open(env_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
+
                 if line and not line.startswith("#") and "=" in line:
                     key, value = line.split("=", 1)
                     os.environ.setdefault(key.strip(), value.strip())
-    else:
-        print(
-            f"Aviso: Arquivo '{filename}' não encontrado. Verifique suas variáveis de ambiente."
-        )
 
 
-# Executa a carga da chave
 load_env_from_file("chave")
 
-# Agora você pode usar a chave seguramente:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    raise Exception(
-        "A variável GEMINI_API_KEY não foi encontrada. Verifique o arquivo 'chave'."
-    )
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -151,8 +140,8 @@ USAR_IA = False
 
 # Adicionado para garantir que o Django encontre estáticos na raiz se necessário
 # Embora APP_DIRS=True já busque em assistente_tea/static/, isso é uma boa prática
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / "static",
+# ]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -60,7 +60,7 @@ Responsabilidade:
 - ler `mensagem` do formulario;
 - ler `modo`, usando `auto` como fallback;
 - obter contexto da sessao;
-- buscar historico recente por `HistoricoService`;
+- obter histórico recente da sessão;
 - chamar `DialogoService.responder(...)`;
 - atualizar contexto e historico de sessao;
 - gravar `Interacao`;
@@ -96,12 +96,25 @@ Responsabilidade:
 
 ### Historico
 
-`enviar_mensagem` usa `HistoricoService().buscar_historico_recente()`, que hoje consulta o banco.
+`enviar_mensagem` usa o histórico armazenado na sessão por meio de `dialogo_historico`.
+
+Comportamento atual:
+
+- o histórico da conversa é lido de `request.session`;
+- após cada interação, a mensagem do usuário e a resposta do sistema são adicionadas ao histórico;
+- a sessão mantém apenas as últimas mensagens;
+- o banco continua sendo usado para persistir `Interacao`, mas não para alimentar diretamente o contexto do diálogo.
 
 Impacto:
 
-- o historico usado pelo service pode ser global;
-- antes de uso multiusuario, definir filtro por sessao, usuario ou conversa.
+- reduz risco de mistura de contexto entre usuários;
+- mantém o fluxo simples para o estágio atual do projeto;
+- ainda permite evolução futura para histórico por usuário ou por conversa.
+
+Observação:
+
+- `HistoricoService` não é necessário no fluxo atual da view;
+- pode ser mantido para uso futuro administrativo ou removido se não houver previsão de uso.
 
 ### Persistencia
 

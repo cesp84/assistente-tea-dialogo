@@ -1,9 +1,11 @@
+import logging
 import unicodedata
 
 from django.conf import settings
 
-from assistente_tea.models import Interacao
 from assistente_tea.services.ia_service import IAService
+
+logger = logging.getLogger(__name__)
 
 
 class DialogoService:
@@ -19,6 +21,8 @@ class DialogoService:
         ],
         "sair": ["parar", "sair", "cancelar", "voltar", "menu"],
     }
+
+    MODOS_VALIDOS = ["sobrecarga", "tarefas", "comunicacao"]
 
     def _normalizar_texto(self, texto: str) -> str:
         if not texto:
@@ -80,7 +84,9 @@ class DialogoService:
         return self._conversa_simples(mensagem_original, historico)
 
     def _identificar_fluxo(self, texto: str, modo: str) -> str:
-        if modo in ["sobrecarga", "tarefas"]:
+        modo = self._normalizar_texto(modo)
+
+        if modo in self.MODOS_VALIDOS:
             return modo
 
         if any(
@@ -242,18 +248,6 @@ class DialogoService:
                 },
             }
 
-        resposta_cache = self._buscar_resposta_em_cache(mensagem)
-
-        if resposta_cache:
-            return {
-                "resposta": resposta_cache,
-                "contexto": {
-                    "fluxo": "simples",
-                    "etapa": 1,
-                    "mensagem_original": mensagem,
-                },
-            }
-
         try:
             ia = IAService()
 
@@ -272,6 +266,8 @@ class DialogoService:
             }
 
         except Exception:
+            logger.exception("Erro ao gerar resposta com IA.")
+
             return {
                 "resposta": (
                     "Entendi.\n\n"
@@ -284,18 +280,6 @@ class DialogoService:
                     "mensagem_original": mensagem,
                 },
             }
-
-    def _buscar_resposta_em_cache(self, mensagem: str) -> str | None:
-        interacao = (
-            Interacao.objects.filter(mensagem_usuario__iexact=mensagem)
-            .order_by("-criado_em")
-            .first()
-        )
-
-        if not interacao:
-            return None
-
-        return interacao.resposta_sistema
 
     def _iniciar_sobrecarga(self) -> dict:
         return {

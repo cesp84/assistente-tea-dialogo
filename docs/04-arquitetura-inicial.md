@@ -1,117 +1,86 @@
-# 🏗️ Arquitetura Inicial
-
-## Objetivo
-
-Definir a arquitetura inicial do Assistente TEA, mantendo o projeto simples, modular, seguro e fácil de evoluir.
-
----
-
-## Visão Geral
-
-```text
-Usuário
-   ↓
-Interface Web
-   ↓
-View Django
-   ↓
-DialogoService
-   ↓
-Regras de diálogo
-   ↓
-Resposta estruturada
-```
-
----
-
 ## Camadas
 
 ### 1. Interface
 
-Responsável por exibir o chat, botões de contexto e respostas estruturadas.
+Responsável por:
+
+- exibir o chat;
+- apresentar respostas de forma clara e previsível;
+- evitar sobrecarga visual;
+- enviar mensagens via requisição HTTP (AJAX).
 
 ### 2. View Django
 
-Responsável por receber a requisição, validar dados básicos e chamar a camada de serviço.
+Responsável por:
+
+- receber a requisição do usuário;
+- validar dados básicos (mensagem, modo, etc.);
+- controlar fluxo da requisição;
+- chamar os services;
+- retornar resposta HTTP (JSON ou renderização).
+
+**Regra importante:**  
+A view não deve conter lógica de negócio complexa.
 
 ### 3. Services
 
-Responsável pela regra de diálogo e organização da resposta.
+Responsáveis pela lógica do sistema.
+
+#### `DialogoService`
+
+- identifica intenção do usuário;
+- controla fluxo de diálogo;
+- executa regras fixas;
+- decide quando usar IA;
+- aplica fallback seguro.
+
+#### `IAService`
+
+- monta o prompt;
+- chama a API externa (Gemini);
+- trata erros de comunicação (timeout, HTTP, etc.);
+- retorna resposta controlada.
+
+#### `HistoricoService`
+
+- recupera histórico recente;
+- prepara contexto para o diálogo.
 
 ### 4. Templates
 
-Responsáveis pela apresentação visual da aplicação.
+Responsáveis pela apresentação visual:
+
+- `chat.html` como interface principal;
+- estrutura simples, acessível e previsível.
 
 ### 5. Static
 
-Responsável por JavaScript, CSS e recursos visuais.
+Responsável por:
+
+- JavaScript (envio de mensagens, UX);
+- CSS (layout simples e acessível).
 
 ---
 
-## Estrutura Inicial
+## Estrutura Atual
 
 ```text
 assistente_tea/
 ├── views.py
 ├── urls.py
+├── models.py
 ├── services/
 │   ├── dialogo_service.py
-│   └── seguranca_service.py
+│   ├── ia_service.py
+│   ├── historico_service.py
+│   └── API_CLIENT.md
 ├── templates/
 │   └── assistente_tea/
 │       └── chat.html
-└── static/
-    └── assistente_tea/
-        └── chat.js
-```
-
----
-
-## Princípios Técnicos
-
-* Manter views simples
-* Centralizar regras em services
-* Evitar lógica de negócio no template
-* Separar comunicação, segurança e apresentação
-* Começar sem IA generativa
-* Evoluir com baixo acoplamento
-
----
-
-## Fluxo Inicial
-
-1. Usuário envia mensagem
-2. Interface envia requisição para Django
-3. View valida mensagem e modo
-4. DialogoService identifica o contexto
-5. Sistema retorna resposta clara e estruturada
-
----
-
-## Evolução Prevista
-
-### Fase 1
-
-* Regras fixas de diálogo
-* Modos simples de interação
-* Interface básica
-
-### Fase 2
-
-* Perfil de comunicação do usuário
-* Preferências de resposta
-* Persistência local controlada
-
-### Fase 3
-
-* Integração com IA
-* Prompt controlado
-* Camada de segurança antes e depois da resposta
-
----
-
-## Decisão Arquitetural Inicial
-
-A primeira versão será baseada em regras, não em IA generativa.
-
-Essa decisão reduz riscos, facilita validação e permite entender melhor os fluxos reais antes de adicionar inteligência artificial.
+├── static/
+│   └── assistente_tea/
+│       ├── js/
+│       │   └── chat.js
+│       └── css/
+│           └── chat.css
+└── VIEWS.md

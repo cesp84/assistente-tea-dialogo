@@ -1,3 +1,4 @@
+# assistente_tea/models.py
 from django.db import models
 
 
@@ -8,6 +9,9 @@ class Interacao(models.Model):
         ("tarefas", "Organizar tarefa"),
     ]
 
+    session_key = models.CharField(
+        max_length=40, db_index=True, blank=True, null=True
+    )  # Novo campo
     mensagem_usuario = models.TextField()
     resposta_sistema = models.TextField()
     modo = models.CharField(max_length=30, choices=MODO_CHOICES)

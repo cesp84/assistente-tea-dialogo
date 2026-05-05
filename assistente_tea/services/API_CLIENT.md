@@ -1,5 +1,4 @@
-# Documentacao dos Services de Integracao
-
+# Documentação dos Services do Assistente TEA
 Arquivos de referencia:
 
 - `assistente_tea/services/ia_service.py`
@@ -123,7 +122,7 @@ Arquivo:
 
 Responsabilidade atual:
 
-- buscar as ultimas interacoes no modelo `Interacao`;
+- buscar as últimas interações no modelo `Interacao`;
 - montar lista no formato:
 
 ```json
@@ -169,9 +168,11 @@ Fluxos atuais:
 Cuidados:
 
 - manter linguagem simples;
-- evitar orientacao clinica;
-- nao aumentar sobrecarga cognitiva;
-- preservar previsibilidade dos fluxos.
+- evitar orientação clínica;
+- não aumentar sobrecarga cognitiva;
+- preservar previsibilidade dos fluxos;
+- evitar consulta direta ao banco dentro do service de diálogo;
+- não reutilizar respostas antigas por cache global sem considerar sessão, usuário ou conversa.
 
 ## Boas Praticas para Evolucao
 

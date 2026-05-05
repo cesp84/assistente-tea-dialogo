@@ -3,7 +3,6 @@ import logging
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
-from .services.historico_service import HistoricoService
 from .models import Interacao
 from .services.dialogo_service import DialogoService
 
@@ -27,7 +26,13 @@ def enviar_mensagem(request):
     modo = request.POST.get("modo", "auto")
 
     contexto = request.session.get("dialogo_contexto", {})
-    historico = HistoricoService().buscar_historico_recente()
+    historico = request.session.get("dialogo_historico", [])
+
+    if not mensagem:
+        return JsonResponse(
+            {"resposta": "Digite uma mensagem para continuar.", "contexto": contexto},
+            status=400,
+        )
 
     if not isinstance(contexto, dict):
         contexto = {}
