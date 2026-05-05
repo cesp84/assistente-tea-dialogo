@@ -5,7 +5,11 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assistente TEA</title>
+
+    <!-- Importação do CSS personalizado -->
+    <link rel="stylesheet" href="{% static 'assistente_tea/css/chat.css' %}">
 </head>
 
 <body>
@@ -16,38 +20,33 @@
             Protótipo de assistente com comunicação clara, estruturada e previsível.
         </p>
 
-        <form id="chat-form">
+        <form id="chat-form" class="chat-form">
             {% csrf_token %}
 
-            <label for="modo">Modo de conversa</label>
-            <select id="modo" name="modo">
-                <option value="simples">Conversa simples</option>
-                <option value="sobrecarga">Estou sobrecarregado</option>
-                <option value="tarefas">Organizar tarefa</option>
-            </select>
-
-            <br><br>
-
             <label for="mensagem">Mensagem</label>
-            <br>
-            <textarea id="mensagem" name="mensagem" rows="5" cols="60"></textarea>
+            <textarea id="mensagem" name="mensagem" rows="5" placeholder="Digite sua mensagem aqui..."></textarea>
 
-            <br><br>
+            <div class="form-actions">
+                <button type="submit">Enviar</button>
 
-            <button type="submit">Enviar</button>
-
-            <!-- 🔥 Novo botão -->
-            <a href="{% url 'assistente_tea:nova_conversa' %}" style="margin-left: 10px;">
-                Nova conversa
-            </a>
+                <a href="{% url 'assistente_tea:nova_conversa' %}" class="btn-link">
+                    Nova conversa
+                </a>
+            </div>
         </form>
 
         <hr>
 
-        <h2>Resposta</h2>
-        <pre id="resposta"></pre>
+        <section>
+            <h2>Resposta</h2>
+            <!-- Div utilizada para exibir a resposta com suporte a acessibilidade -->
+            <div id="resposta" aria-live="polite" role="status" class="resposta-box">
+                Aguardando interação...
+            </div>
+        </section>
     </main>
 
+    <!-- Importação do JavaScript -->
     <script src="{% static 'assistente_tea/js/chat.js' %}"></script>
 </body>
 

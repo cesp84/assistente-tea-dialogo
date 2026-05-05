@@ -14,7 +14,7 @@ def chat(request):
 @require_POST
 def enviar_mensagem(request):
     mensagem = request.POST.get("mensagem", "")
-    modo = request.POST.get("modo", "simples")
+    modo = request.POST.get("modo", "auto")
     contexto = request.session.get("dialogo_contexto", {})
 
     service = DialogoService()

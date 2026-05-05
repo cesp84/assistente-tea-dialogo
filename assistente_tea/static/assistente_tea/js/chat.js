@@ -5,22 +5,40 @@ document.getElementById("chat-form").addEventListener("submit", async function (
     const formData = new FormData(form);
     const respostaElemento = document.getElementById("resposta");
     const mensagemElemento = document.getElementById("mensagem");
+    const submitButton = form.querySelector('button[type="submit"]');
 
+    // Desabilita botão e mostra estado de carregamento
+    submitButton.disabled = true;
     respostaElemento.innerText = "Processando...";
 
-    const response = await fetch("enviar/", {
-        method: "POST",
-        body: formData,
-        headers: {
-            "X-CSRFToken": formData.get("csrfmiddlewaretoken")
+    try {
+        const response = await fetch("enviar/", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRFToken": formData.get("csrfmiddlewaretoken")
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
         }
-    });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    respostaElemento.innerText = data.resposta;
+        if (data && data.resposta) {
+            respostaElemento.innerText = data.resposta;
+        } else {
+            respostaElemento.innerText = "Resposta vazia ou malformada.";
+        }
 
-    // Limpa a caixa de texto depois do envio
-    mensagemElemento.value = "";
-    mensagemElemento.focus();
+    } catch (error) {
+        console.error("Erro na comunicação:", error);
+        respostaElemento.innerText = `Falha ao processar: ${error.message}`;
+    } finally {
+        // Reabilita botão e foca no campo
+        submitButton.disabled = false;
+        mensagemElemento.value = "";
+        mensagemElemento.focus();
+    }
 });

@@ -1,0 +1,96 @@
+/* static/assistente_tea/css/chat.css */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #f9f9f9;
+}
+
+main h1 {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+
+main p {
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+#chat-form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#chat-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+#mensagem {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    font-size: 1rem;
+}
+
+#chat-form button {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+#chat-form button:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+#chat-form button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+#chat-form a {
+    margin-left: 1rem;
+    color: #3498db;
+    text-decoration: none;
+}
+
+#chat-form a:hover {
+    text-decoration: underline;
+}
+
+hr {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid #eee;
+}
+
+#resposta {
+    background: #fff;
+    padding: 1rem;
+    border-left: 4px solid #3498db;
+    border-radius: 0 4px 4px 0;
+    min-height: 100px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Acessibilidade: foco visível */
+:focus {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+}

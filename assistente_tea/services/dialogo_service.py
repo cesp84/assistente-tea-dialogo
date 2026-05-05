@@ -29,11 +29,7 @@ class DialogoService:
         fluxo = contexto.get("fluxo")
         etapa = contexto.get("etapa", 0)
 
-        if fluxo:
-            return self._continuar_fluxo(mensagem, fluxo, etapa, contexto)
-
         registro = self._buscar_base_conhecimento(mensagem)
-
         if registro:
             return {
                 "resposta": (
@@ -48,6 +44,9 @@ class DialogoService:
                     "categoria": registro.categoria,
                 },
             }
+
+        if fluxo:
+            return self._continuar_fluxo(mensagem, fluxo, etapa, contexto)
 
         fluxo_identificado = self._identificar_fluxo(texto, modo)
 
@@ -74,9 +73,11 @@ class DialogoService:
         return None
 
     def _identificar_fluxo(self, texto: str, modo: str) -> str:
+        # 🔥 Só força o modo se NÃO for simples
         if modo in ["sobrecarga", "tarefas"]:
             return modo
 
+        # 🔥 Agora ele decide sozinho
         if any(
             p in texto
             for p in [
@@ -86,13 +87,21 @@ class DialogoService:
                 "confuso",
                 "nervoso",
                 "irritado",
+                "cansado",
             ]
         ):
             return "sobrecarga"
 
         if any(
             p in texto
-            for p in ["preciso", "tarefa", "estudar", "fazer", "organizar", "trabalho"]
+            for p in [
+                "preciso",
+                "tarefa",
+                "estudar",
+                "fazer",
+                "organizar",
+                "trabalho",
+            ]
         ):
             return "tarefas"
 
