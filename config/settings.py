@@ -41,7 +41,7 @@ load_env_from_file("chave")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise Exception(
-        "A variável OPENAI_API_KEY não foi encontrada. Verifique o arquivo 'chave'."
+        "A variável GEMINI_API_KEY não foi encontrada. Verifique o arquivo 'chave'."
     )
 
 
