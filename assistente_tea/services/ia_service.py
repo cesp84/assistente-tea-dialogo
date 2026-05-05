@@ -13,11 +13,15 @@ class IAService:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY não configurada no settings.py.")
 
-        print("Modelo Gemini em uso: gemini-2.5-flash")
+        self.modelos = [
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+        ]
 
-        self.url = (
+    def _montar_url(self, modelo: str) -> str:
+        return (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-2.5-flash:generateContent?key={self.api_key}"
+            f"{modelo}:generateContent?key={self.api_key}"
         )
 
     def gerar_resposta_ia(
@@ -29,96 +33,160 @@ class IAService:
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
                 "temperature": 0.3,
-                "maxOutputTokens": 400,
+                "maxOutputTokens": 800,
                 "topK": 40,
                 "topP": 0.95,
             },
         }
 
-        try:
-            response = requests.post(
-                self.url,
-                json=payload,
-                timeout=20,
-            )
+        for modelo in self.modelos:
+            try:
+                logger.info("Chamando Gemini com modelo: %s", modelo)
 
-            if response.status_code == 503:
-                logger.warning("Gemini indisponível (alta demanda): %s", response.text)
-                return (
-                    "O serviço de IA está indisponível agora.\n\n"
-                    "Vamos continuar de forma simples:\n"
-                    "me diga o que você quer resolver primeiro."
+                response = requests.post(
+                    self._montar_url(modelo),
+                    json=payload,
+                    timeout=20,
                 )
 
-            if response.status_code != 200:
+                if response.status_code == 200:
+                    return self._extrair_resposta(response.json(), modelo)
+
                 logger.warning(
-                    "Erro ao chamar Gemini. Status: %s | Resposta: %s",
+                    "Falha no Gemini. Modelo: %s | Status: %s | Resposta: %s",
+                    modelo,
                     response.status_code,
                     response.text,
                 )
-                return "Não consegui gerar resposta agora. Tente novamente."
 
-            data = response.json()
-            resposta = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            except requests.Timeout:
+                logger.warning("Tempo limite ao chamar Gemini. Modelo: %s", modelo)
 
-            if len(resposta) < 20 or resposta.endswith(
-                ("Você pode", "Você pode ", "Certo.")
-            ):
+            except requests.RequestException as e:
+                logger.error(
+                    "Erro de conexão com Gemini. Modelo: %s | Erro: %s",
+                    modelo,
+                    e,
+                    exc_info=True,
+                )
+
+            except Exception as e:
+                logger.error(
+                    "Erro inesperado no Gemini. Modelo: %s | Erro: %s",
+                    modelo,
+                    e,
+                    exc_info=True,
+                )
+
+        return (
+            "O serviço de IA está instável agora.\n\n"
+            "Vamos continuar de forma simples.\n"
+            "O que aconteceu primeiro?"
+        )
+
+    def _extrair_resposta(self, data: dict, modelo: str) -> str:
+        try:
+            candidate = data["candidates"][0]
+            parts = candidate.get("content", {}).get("parts", [])
+
+            resposta = "\n".join(
+                part.get("text", "") for part in parts if part.get("text")
+            ).strip()
+
+            finish_reason = candidate.get("finishReason")
+
+            if finish_reason == "MAX_TOKENS" or len(resposta) < 30:
+                logger.warning(
+                    "Resposta incompleta do Gemini. Modelo: %s | FinishReason: %s",
+                    modelo,
+                    finish_reason,
+                )
                 return (
-                    "Posso te ajudar melhor com mais detalhes.\n\n"
-                    "O que aconteceu no seu dia?"
+                    "Entendi.\n\n"
+                    "Podemos dividir isso em partes pequenas.\n"
+                    "O que aconteceu primeiro?"
+                )
+
+            if resposta.endswith(("Você pode", "Você pode ", "Certo.")):
+                logger.warning("Resposta possivelmente truncada. Modelo: %s", modelo)
+                return (
+                    "Entendi.\n\n"
+                    "Podemos conversar com calma.\n"
+                    "O que você quer me contar primeiro?"
                 )
 
             return resposta
 
-        except requests.Timeout:
-            logger.warning("Tempo limite ao chamar Gemini.")
-            return "A resposta demorou mais que o esperado. Tente novamente."
-
-        except requests.RequestException as e:
-            logger.error("Erro de conexão com Gemini: %s", e, exc_info=True)
-            return "Não consegui conectar ao serviço de IA agora. Tente novamente."
-
         except Exception as e:
             logger.error(
-                "Erro inesperado ao processar resposta do Gemini: %s", e, exc_info=True
+                "Erro ao extrair resposta do Gemini. Modelo: %s | Erro: %s",
+                modelo,
+                e,
+                exc_info=True,
             )
             return (
-                "Tive dificuldade para processar a resposta agora.\n\n"
-                "Podemos tentar de novo com uma mensagem mais curta."
+                "Não consegui entender a resposta da IA agora.\n\n"
+                "Vamos continuar de forma simples.\n"
+                "O que você quer resolver primeiro?"
             )
 
     def _montar_prompt(self, mensagem_usuario: str, historico: list) -> str:
+        # base = (
+        #     "Você é um assistente conversacional para apoio comunicacional de pessoas com TEA.\n"
+        #     "Seu papel é conversar de forma guiada, clara, previsível e segura.\n\n"
+        #     "Regras obrigatórias:\n"
+        #     "1. Responda em português do Brasil.\n"
+        #     "2. Use linguagem literal, simples e direta.\n"
+        #     "3. Não use metáforas, ironias ou duplo sentido.\n"
+        #     "4. Não faça diagnóstico.\n"
+        #     "5. Não substitua profissional de saúde.\n"
+        #     "6. Não suponha sentimentos que o usuário não informou.\n"
+        #     "7. Use apenas as informações dadas pelo usuário.\n"
+        #     "8. Sempre finalize a resposta completa.\n"
+        #     "9. Não termine com frase aberta ou incompleta.\n"
+        #     "10. Nunca atribua emoções ao usuário sem confirmação explícita.\n"
+        #     "11. Analise a mensagem com atenção antes de responder.\n"
+        #     "12. Evite conclusões rápidas.\n"
+        #     "13. Se houver dúvida, peça mais informação.\n"
+        #     "14. Priorize clareza e precisão.\n"
+        #     "15. Se houver múltiplas interpretações, escolha a mais neutra.\n\n"
+        #     "Modos de resposta (escolha automaticamente):\n"
+        #     "- Curta: até 2 frases. Para respostas diretas.\n"
+        #     "- Guiada: 3 frases com uma pergunta final. Para continuar conversa.\n"
+        #     "- Explicativa: explicar em passos simples (máx. 5 itens).\n\n"
+        #     "Escolha do modo:\n"
+        #     "- Pergunta simples → Curta\n"
+        #     "- Conversa aberta → Guiada\n"
+        #     "- Pedido de explicação → Explicativa\n"
+        #     "- Dúvida → Guiada\n\n"
+        #     "Estilo de conversa:\n"
+        #     "- Comece com validação neutra (ex: 'Entendi.').\n"
+        #     "- Use frases curtas.\n"
+        #     "- Use estrutura previsível.\n"
+        #     "- Faça apenas UMA pergunta por vez.\n"
+        #     "- Se a mensagem for vaga, peça esclarecimento.\n"
+        #     "- Divida assuntos em partes pequenas.\n"
+        #     "- Sugira sempre um primeiro passo simples.\n"
+        #     "- Reduza informações se houver risco de sobrecarga.\n\n"
+        #     "Formato padrão (quando aplicável):\n"
+        #     "1. Validação curta.\n"
+        #     "2. Orientação simples.\n"
+        #     "3. Pergunta clara.\n\n"
+        #     "Exemplo:\n"
+        #     "Entendi.\n"
+        #     "Podemos organizar isso em uma parte pequena.\n"
+        #     "Qual é a primeira coisa que você quer resolver?\n\n"
+        # )
         base = (
             "Você é um assistente conversacional para apoio comunicacional de pessoas com TEA.\n"
-            "Seu papel é conversar de forma guiada, clara e previsível.\n\n"
-            "Regras obrigatórias:\n"
-            "1. Responda em português do Brasil.\n"
-            "2. Use linguagem literal, simples e direta.\n"
-            "3. Não use metáforas, ironias ou duplo sentido.\n"
-            "4. Não faça diagnóstico.\n"
-            "5. Não substitua profissional de saúde.\n"
-            "6. Não suponha sentimentos que o usuário não informou.\n"
-            "7. Use apenas as informações dadas pelo usuário.\n"
-            "8. Responda com no máximo 5 frases.\n"
-            "9. Sempre finalize a resposta completa.\n\n"
-            "Estilo de conversa guiada:\n"
-            "- Comece validando a mensagem de forma neutra.\n"
-            "- Organize a resposta em passos pequenos quando útil.\n"
-            "- Faça apenas UMA pergunta por vez.\n"
-            "- Se a mensagem for vaga, peça esclarecimento.\n"
-            "- Se o usuário pedir ajuda para melhorar, pergunte primeiro o que ele quer melhorar.\n"
-            "- Se o usuário falar sobre rotina, ajude a dividir em partes.\n"
-            "- Se o usuário falar sobre tarefa, sugira um primeiro passo simples.\n"
-            "- Se o usuário parecer sobrecarregado, reduza a quantidade de informação.\n\n"
-            "Formato preferencial da resposta:\n"
-            "1. Uma frase curta de acolhimento neutro.\n"
-            "2. Uma orientação simples.\n"
-            "3. Uma pergunta clara para continuar a conversa.\n\n"
-            "Exemplo de boa resposta:\n"
-            "Entendi.\n"
-            "Vamos organizar isso em uma parte pequena.\n"
-            "Qual é a primeira coisa que você quer resolver?\n\n"
+            "Responda em português do Brasil.\n"
+            "Use linguagem literal, simples e direta.\n"
+            "Não use metáforas, ironias ou duplo sentido.\n"
+            "Não faça diagnóstico nem substitua profissional de saúde.\n"
+            "Não suponha sentimentos que o usuário não informou.\n"
+            "Se houver dúvida, peça mais informação.\n"
+            "Faça apenas uma pergunta por vez.\n"
+            "Responda de forma curta, completa e previsível.\n"
         )
 
         contexto = ""

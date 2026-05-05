@@ -147,6 +147,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+USAR_IA = False
 
 # Adicionado para garantir que o Django encontre estáticos na raiz se necessário
 # Embora APP_DIRS=True já busque em assistente_tea/static/, isso é uma boa prática
