@@ -12,7 +12,7 @@ document.getElementById("chat-form").addEventListener("submit", async function (
     respostaElemento.innerText = "Processando...";
 
     try {
-        const response = await fetch("enviar/", {
+        const response = await fetch("/assistente_tea/enviar/", {
             method: "POST",
             body: formData,
             headers: {

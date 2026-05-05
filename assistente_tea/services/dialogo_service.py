@@ -1,35 +1,73 @@
+import unicodedata
 from assistente_tea.models import BaseConhecimento
 
 
 class DialogoService:
     SAUDACOES = ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite"]
 
-    REINICIAR = [
-        "nova conversa",
-        "reiniciar",
-        "começar de novo",
-        "comecar de novo",
-        "zerar",
-    ]
+    # Palavras-chave para reiniciar ou sair de qualquer fluxo
+    COMANDOS_GLOBAIS = {
+        "reiniciar": [
+            "nova conversa",
+            "reiniciar",
+            "começar de novo",
+            "comecar de novo",
+            "zerar",
+        ],
+        "sair": ["parar", "sair", "cancelar", "voltar", "menu"],
+    }
+
+    def _normalizar_texto(self, texto: str) -> str:
+        """Remove acentos e converte para minúsculas para facilitar matching."""
+        if not texto:
+            return ""
+        # Normaliza unicode (remove acentos)
+        nfkd_form = unicodedata.normalize("NFKD", texto)
+        only_ascii = nfkd_form.encode("ASCII", "ignore").decode("ASCII")
+        return only_ascii.lower().strip()
 
     def responder(self, mensagem: str, modo: str, contexto: dict | None = None) -> dict:
-        mensagem = (mensagem or "").strip()
-        texto = mensagem.lower()
+        mensagem_original = (mensagem or "").strip()
+        texto_normalizado = self._normalizar_texto(mensagem_original)
         contexto = contexto or {}
 
-        if not mensagem:
+        # 1. Validação de entrada vazia
+        if not texto_normalizado:
             return self._resposta_inicial()
 
-        if texto in self.REINICIAR:
+        # 2. Comandos Globais (Prioridade Máxima)
+        if texto_normalizado in self.COMANDOS_GLOBAIS["reiniciar"]:
             return self._resposta_inicial()
+        
+        if texto_normalizado in self.COMANDOS_GLOBAIS["sair"]:
+            return self._saudacao() 
 
-        if texto in self.SAUDACOES:
+        # 3. Saudações -> Sempre direciona para o Menu Estruturado (Previsibilidade)
+        if texto_normalizado in self.SAUDACOES:
             return self._saudacao()
 
+        # 4. Recupera estado atual
         fluxo = contexto.get("fluxo")
         etapa = contexto.get("etapa", 0)
 
-        registro = self._buscar_base_conhecimento(mensagem)
+        # 5. Se já estamos em um fluxo ativo, continuamos nele
+        if fluxo:
+            return self._continuar_fluxo(mensagem_original, texto_normalizado, fluxo, etapa, contexto)
+
+        # 6. Identificação de Intenção (Fluxos Guiados têm prioridade sobre KB)
+        fluxo_identificado = self._identificar_fluxo(texto_normalizado, modo)
+
+        if fluxo_identificado == "sobrecarga":
+            return self._iniciar_sobrecarga()
+
+        if fluxo_identificado == "tarefas":
+            return self._iniciar_tarefas(mensagem_original)
+
+        if fluxo_identificado == "comunicacao":
+            return self._iniciar_comunicacao()
+
+        # 7. Busca na Base de Conhecimento (Para casos específicos não cobertos pelos fluxos)
+        registro = self._buscar_base_conhecimento(mensagem_original)
         if registro:
             return {
                 "resposta": (
@@ -45,39 +83,27 @@ class DialogoService:
                 },
             }
 
-        if fluxo:
-            return self._continuar_fluxo(mensagem, fluxo, etapa, contexto)
-
-        fluxo_identificado = self._identificar_fluxo(texto, modo)
-
-        if fluxo_identificado == "sobrecarga":
-            return self._iniciar_sobrecarga()
-
-        if fluxo_identificado == "tarefas":
-            return self._iniciar_tarefas(mensagem)
-
-        if fluxo_identificado == "comunicacao":
-            return self._iniciar_comunicacao()
-
-        return self._conversa_simples(mensagem)
+        # 8. Fallback: Conversa Simples
+        return self._conversa_simples(mensagem_original)
 
     def _buscar_base_conhecimento(self, mensagem: str):
-        texto = mensagem.lower()
-
+        texto_norm = self._normalizar_texto(mensagem)
         registros = BaseConhecimento.objects.filter(ativo=True)
-
+        
         for registro in registros:
-            if registro.gatilho.lower() in texto:
+            gatilho_norm = self._normalizar_texto(registro.gatilho)
+            # Verifica se o gatilho está contido na mensagem do usuário
+            if gatilho_norm and gatilho_norm in texto_norm:
                 return registro
-
         return None
 
+
+
     def _identificar_fluxo(self, texto: str, modo: str) -> str:
-        # 🔥 Só força o modo se NÃO for simples
         if modo in ["sobrecarga", "tarefas"]:
             return modo
 
-        # 🔥 Agora ele decide sozinho
+        # Palavras-chave de sobrecarga/emocional
         if any(
             p in texto
             for p in [
@@ -88,10 +114,12 @@ class DialogoService:
                 "nervoso",
                 "irritado",
                 "cansado",
+                "estressado",
             ]
         ):
             return "sobrecarga"
 
+        # Palavras-chave de tarefas/organização
         if any(
             p in texto
             for p in [
@@ -101,18 +129,22 @@ class DialogoService:
                 "fazer",
                 "organizar",
                 "trabalho",
+                "lista",
+                "passo",
             ]
         ):
             return "tarefas"
 
+        # Palavras-chave de dúvida/comunicação
         if any(
             p in texto
             for p in [
-                "não entendi",
                 "nao entendi",
+                "não entendi",
                 "explique",
                 "explica",
                 "o que significa",
+                "duvida",
             ]
         ):
             return "comunicacao"
@@ -149,31 +181,41 @@ class DialogoService:
         }
 
     def _continuar_fluxo(
-        self, mensagem: str, fluxo: str, etapa: int, contexto: dict
+        self,
+        mensagem_original: str,
+        texto_normalizado: str,
+        fluxo: str,
+        etapa: int,
+        contexto: dict,
     ) -> dict:
+        # Verifica comandos globais mesmo dentro de um fluxo
+        if texto_normalizado in self.COMANDOS_GLOBAIS["sair"]:
+            return self._saudacao()
+        if texto_normalizado in self.COMANDOS_GLOBAIS["reiniciar"]:
+            return self._resposta_inicial()
+
         if fluxo == "base_conhecimento":
-            return self._continuar_base_conhecimento(mensagem)
-
+            return self._continuar_base_conhecimento(texto_normalizado)
         if fluxo == "menu_inicial":
-            return self._continuar_menu_inicial(mensagem)
-
+            return self._continuar_menu_inicial(texto_normalizado)
         if fluxo == "simples":
-            return self._continuar_simples(mensagem)
-
+            return self._continuar_simples(texto_normalizado, contexto)
         if fluxo == "sobrecarga":
-            return self._continuar_sobrecarga(mensagem, etapa)
-
+            return self._continuar_sobrecarga(
+                mensagem_original, texto_normalizado, etapa
+            )
         if fluxo == "tarefas":
-            return self._continuar_tarefas(mensagem, etapa, contexto)
-
+            return self._continuar_tarefas(
+                mensagem_original, texto_normalizado, etapa, contexto
+            )
         if fluxo == "comunicacao":
-            return self._continuar_comunicacao(mensagem, etapa)
+            return self._continuar_comunicacao(
+                mensagem_original, texto_normalizado, etapa
+            )
 
-        return self._conversa_simples(mensagem)
+        return self._conversa_simples(mensagem_original)
 
-    def _continuar_base_conhecimento(self, mensagem: str) -> dict:
-        texto = mensagem.lower().strip()
-
+    def _continuar_base_conhecimento(self, texto: str) -> dict:
         if texto in ["1", "sim", "s"]:
             return {
                 "resposta": (
@@ -188,31 +230,22 @@ class DialogoService:
                     "etapa": 1,
                 },
             }
-
         return {
             "resposta": "Tudo bem. Se precisar, estou aqui.",
             "contexto": {},
         }
 
-    def _continuar_menu_inicial(self, mensagem: str) -> dict:
-        texto = mensagem.lower().strip()
-
+    def _continuar_menu_inicial(self, texto: str) -> dict:
         if texto in ["1", "conversar", "conversa simples"]:
             return self._conversa_simples("Quero conversar de forma simples.")
-
         if texto in ["2", "sobrecarregado", "estou sobrecarregado"]:
             return self._iniciar_sobrecarga()
-
         if texto in ["3", "tarefa", "organizar tarefa"]:
             return {
                 "resposta": "Certo. Qual tarefa você quer organizar?",
-                "contexto": {
-                    "fluxo": "tarefas",
-                    "etapa": 0,
-                },
+                "contexto": {"fluxo": "tarefas", "etapa": 0},
             }
-
-        if texto in ["4", "não entendi", "nao entendi", "situação", "situacao"]:
+        if texto in ["4", "nao entendi", "não entendi", "situação", "situacao"]:
             return self._iniciar_comunicacao()
 
         return {
@@ -224,10 +257,7 @@ class DialogoService:
                 "3. Organizar tarefa\n"
                 "4. Não entendi uma situação"
             ),
-            "contexto": {
-                "fluxo": "menu_inicial",
-                "etapa": 1,
-            },
+            "contexto": {"fluxo": "menu_inicial", "etapa": 1},
         }
 
     def _conversa_simples(self, mensagem: str) -> dict:
@@ -247,30 +277,20 @@ class DialogoService:
             },
         }
 
-    def _continuar_simples(self, mensagem: str) -> dict:
-        texto = mensagem.lower().strip()
-
+    def _continuar_simples(self, texto: str, contexto: dict) -> dict:
         if texto in ["1", "explicar", "explicar melhor"]:
             return {
                 "resposta": (
                     "Certo. Vou explicar de forma simples.\n\n"
                     "Para eu ajudar melhor, escreva qual parte você quer entender."
                 ),
-                "contexto": {
-                    "fluxo": "comunicacao",
-                    "etapa": 1,
-                },
+                "contexto": {"fluxo": "comunicacao", "etapa": 1},
             }
-
         if texto in ["2", "organizar", "organizar em passos"]:
             return {
                 "resposta": "Certo. Escreva a tarefa ou assunto que você quer organizar.",
-                "contexto": {
-                    "fluxo": "tarefas",
-                    "etapa": 0,
-                },
+                "contexto": {"fluxo": "tarefas", "etapa": 0},
             }
-
         if texto in ["3", "resposta curta", "criar resposta curta"]:
             return {
                 "resposta": (
@@ -279,7 +299,6 @@ class DialogoService:
                 ),
                 "contexto": {},
             }
-
         return {
             "resposta": (
                 "Escolha uma opção:\n"
@@ -287,10 +306,7 @@ class DialogoService:
                 "2. Organizar em passos\n"
                 "3. Criar uma resposta curta"
             ),
-            "contexto": {
-                "fluxo": "simples",
-                "etapa": 1,
-            },
+            "contexto": {"fluxo": "simples", "etapa": 1},
         }
 
     def _iniciar_sobrecarga(self) -> dict:
@@ -303,13 +319,12 @@ class DialogoService:
                 "2. Quero organizar meus pensamentos.\n"
                 "3. Quero explicar o que aconteceu."
             ),
-            "contexto": {
-                "fluxo": "sobrecarga",
-                "etapa": 1,
-            },
+            "contexto": {"fluxo": "sobrecarga", "etapa": 1},
         }
 
-    def _continuar_sobrecarga(self, mensagem: str, etapa: int) -> dict:
+    def _continuar_sobrecarga(
+        self, mensagem_original: str, texto: str, etapa: int
+    ) -> dict:
         if etapa == 1:
             return {
                 "resposta": (
@@ -320,22 +335,18 @@ class DialogoService:
                 "contexto": {
                     "fluxo": "sobrecarga",
                     "etapa": 2,
-                    "preferencia": mensagem,
+                    "preferencia": mensagem_original,
                 },
             }
-
         return {
             "resposta": (
                 "Entendi.\n\n"
-                f"O incômodo principal é: {mensagem}\n\n"
+                f"O incômodo principal é: {mensagem_original}\n\n"
                 "Ação simples:\n"
                 "reduza uma coisa que aumenta esse incômodo, se for possível.\n\n"
                 "Depois responda: melhorou um pouco?"
             ),
-            "contexto": {
-                "fluxo": "sobrecarga",
-                "etapa": 3,
-            },
+            "contexto": {"fluxo": "sobrecarga", "etapa": 3},
         }
 
     def _iniciar_tarefas(self, mensagem: str) -> dict:
@@ -345,22 +356,19 @@ class DialogoService:
                 f"Tarefa: {mensagem}\n\n"
                 "Qual é o primeiro passo mais fácil?"
             ),
-            "contexto": {
-                "fluxo": "tarefas",
-                "etapa": 1,
-                "tarefa_original": mensagem,
-            },
+            "contexto": {"fluxo": "tarefas", "etapa": 1, "tarefa_original": mensagem},
         }
 
-    def _continuar_tarefas(self, mensagem: str, etapa: int, contexto: dict) -> dict:
+    def _continuar_tarefas(
+        self, mensagem_original: str, texto: str, etapa: int, contexto: dict
+    ) -> dict:
         if etapa == 0:
-            return self._iniciar_tarefas(mensagem)
-
+            return self._iniciar_tarefas(mensagem_original)
         if etapa == 1:
             return {
                 "resposta": (
                     "Ótimo.\n\n"
-                    f"Primeiro passo: {mensagem}\n\n"
+                    f"Primeiro passo: {mensagem_original}\n\n"
                     "Você consegue fazer isso em até 10 minutos?\n"
                     "Responda: sim ou não."
                 ),
@@ -368,11 +376,9 @@ class DialogoService:
                     **contexto,
                     "fluxo": "tarefas",
                     "etapa": 2,
-                    "primeiro_passo": mensagem,
+                    "primeiro_passo": mensagem_original,
                 },
             }
-
-        texto = mensagem.lower().strip()
 
         if texto in ["sim", "s"]:
             return {
@@ -381,12 +387,8 @@ class DialogoService:
                     "Faça apenas esse primeiro passo agora.\n\n"
                     "Quando terminar, escreva: concluído."
                 ),
-                "contexto": {
-                    "fluxo": "tarefas",
-                    "etapa": 3,
-                },
+                "contexto": {"fluxo": "tarefas", "etapa": 3},
             }
-
         if texto in ["concluído", "concluido", "terminei", "feito"]:
             return {
                 "resposta": (
@@ -395,10 +397,7 @@ class DialogoService:
                     "1. Continuar para o próximo passo\n"
                     "2. Encerrar por enquanto"
                 ),
-                "contexto": {
-                    "fluxo": "tarefas_concluidas",
-                    "etapa": 1,
-                },
+                "contexto": {"fluxo": "tarefas_concluidas", "etapa": 1},
             }
 
         return {
@@ -407,10 +406,7 @@ class DialogoService:
                 "Então vamos reduzir mais.\n\n"
                 "Escreva uma versão menor desse primeiro passo."
             ),
-            "contexto": {
-                "fluxo": "tarefas",
-                "etapa": 1,
-            },
+            "contexto": {"fluxo": "tarefas", "etapa": 1},
         }
 
     def _iniciar_comunicacao(self) -> dict:
@@ -420,31 +416,29 @@ class DialogoService:
                 "Me diga apenas isto:\n"
                 "o que aconteceu?"
             ),
-            "contexto": {
-                "fluxo": "comunicacao",
-                "etapa": 1,
-            },
+            "contexto": {"fluxo": "comunicacao", "etapa": 1},
         }
 
-    def _continuar_comunicacao(self, mensagem: str, etapa: int) -> dict:
+    def _continuar_comunicacao(
+        self, mensagem_original: str, texto: str, etapa: int
+    ) -> dict:
         if etapa == 1:
             return {
                 "resposta": (
                     "Entendi.\n\n"
-                    f"Situação: {mensagem}\n\n"
+                    f"Situação: {mensagem_original}\n\n"
                     "Qual parte você não entendeu?"
                 ),
                 "contexto": {
                     "fluxo": "comunicacao",
                     "etapa": 2,
-                    "situacao": mensagem,
+                    "situacao": mensagem_original,
                 },
             }
-
         return {
             "resposta": (
                 "Certo.\n\n"
-                f"Parte confusa: {mensagem}\n\n"
+                f"Parte confusa: {mensagem_original}\n\n"
                 "Uma pergunta direta que você pode usar é:\n\n"
                 '"Você pode explicar isso de outro jeito?"'
             ),

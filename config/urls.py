@@ -22,5 +22,5 @@ from django.shortcuts import redirect
 urlpatterns = [
     path("", lambda request: redirect("assistente_tea:chat")),
     path("admin/", admin.site.urls),
-    path("assistente-tea/", include("assistente_tea.urls")),
+    path("assistente_tea/", include("assistente_tea.urls")),
 ]
