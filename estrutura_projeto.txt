@@ -1,4 +1,6 @@
 .
+├── anotacoes_local
+│   └── contexto_assistente_tea_dialogo.md
 ├── assistente_tea
 │   ├── admin.py
 │   ├── apps.py
@@ -8,7 +10,9 @@
 │   │   └── __init__.py
 │   ├── models.py
 │   ├── services
+│   │   ├── API_CLIENT.md
 │   │   ├── dialogo_service.py
+│   │   ├── historico_service.py
 │   │   ├── ia_service.py
 │   │   └── __init__.py
 │   ├── static
@@ -22,6 +26,7 @@
 │   │       └── chat.html
 │   ├── tests.py
 │   ├── urls.py
+│   ├── VIEWS.md
 │   └── views.py
 ├── chave
 ├── config
@@ -42,4 +47,4 @@
 ├── Pipfile.lock
 └── README.md
 
-12 directories, 31 files
+13 directories, 35 files
