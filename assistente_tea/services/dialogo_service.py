@@ -1,5 +1,4 @@
 import unicodedata
-from assistente_tea.models import BaseConhecimento
 
 
 class DialogoService:
@@ -38,9 +37,9 @@ class DialogoService:
         # 2. Comandos Globais (Prioridade Máxima)
         if texto_normalizado in self.COMANDOS_GLOBAIS["reiniciar"]:
             return self._resposta_inicial()
-        
+
         if texto_normalizado in self.COMANDOS_GLOBAIS["sair"]:
-            return self._saudacao() 
+            return self._saudacao()
 
         # 3. Saudações -> Sempre direciona para o Menu Estruturado (Previsibilidade)
         if texto_normalizado in self.SAUDACOES:
@@ -52,9 +51,11 @@ class DialogoService:
 
         # 5. Se já estamos em um fluxo ativo, continuamos nele
         if fluxo:
-            return self._continuar_fluxo(mensagem_original, texto_normalizado, fluxo, etapa, contexto)
+            return self._continuar_fluxo(
+                mensagem_original, texto_normalizado, fluxo, etapa, contexto
+            )
 
-        # 6. Identificação de Intenção (Fluxos Guiados têm prioridade sobre KB)
+        # 6. Identificação de Intenção (Fluxos Guiados têm prioridade)
         fluxo_identificado = self._identificar_fluxo(texto_normalizado, modo)
 
         if fluxo_identificado == "sobrecarga":
@@ -66,38 +67,8 @@ class DialogoService:
         if fluxo_identificado == "comunicacao":
             return self._iniciar_comunicacao()
 
-        # 7. Busca na Base de Conhecimento (Para casos específicos não cobertos pelos fluxos)
-        registro = self._buscar_base_conhecimento(mensagem_original)
-        if registro:
-            return {
-                "resposta": (
-                    f"{registro.resposta}\n\n"
-                    "Quer que eu te ajude mais com isso?\n"
-                    "1. Sim\n"
-                    "2. Não"
-                ),
-                "contexto": {
-                    "fluxo": "base_conhecimento",
-                    "etapa": 1,
-                    "categoria": registro.categoria,
-                },
-            }
-
-        # 8. Fallback: Conversa Simples
+        # 7. Fallback: Conversa Simples (Aqui entrará a IA futuramente)
         return self._conversa_simples(mensagem_original)
-
-    def _buscar_base_conhecimento(self, mensagem: str):
-        texto_norm = self._normalizar_texto(mensagem)
-        registros = BaseConhecimento.objects.filter(ativo=True)
-        
-        for registro in registros:
-            gatilho_norm = self._normalizar_texto(registro.gatilho)
-            # Verifica se o gatilho está contido na mensagem do usuário
-            if gatilho_norm and gatilho_norm in texto_norm:
-                return registro
-        return None
-
-
 
     def _identificar_fluxo(self, texto: str, modo: str) -> str:
         if modo in ["sobrecarga", "tarefas"]:
@@ -194,8 +165,6 @@ class DialogoService:
         if texto_normalizado in self.COMANDOS_GLOBAIS["reiniciar"]:
             return self._resposta_inicial()
 
-        if fluxo == "base_conhecimento":
-            return self._continuar_base_conhecimento(texto_normalizado)
         if fluxo == "menu_inicial":
             return self._continuar_menu_inicial(texto_normalizado)
         if fluxo == "simples":
@@ -214,26 +183,6 @@ class DialogoService:
             )
 
         return self._conversa_simples(mensagem_original)
-
-    def _continuar_base_conhecimento(self, texto: str) -> dict:
-        if texto in ["1", "sim", "s"]:
-            return {
-                "resposta": (
-                    "Certo.\n\n"
-                    "Você quer:\n"
-                    "1. Organizar isso em passos\n"
-                    "2. Explicar melhor\n"
-                    "3. Criar uma ação prática"
-                ),
-                "contexto": {
-                    "fluxo": "simples",
-                    "etapa": 1,
-                },
-            }
-        return {
-            "resposta": "Tudo bem. Se precisar, estou aqui.",
-            "contexto": {},
-        }
 
     def _continuar_menu_inicial(self, texto: str) -> dict:
         if texto in ["1", "conversar", "conversa simples"]:
@@ -261,6 +210,8 @@ class DialogoService:
         }
 
     def _conversa_simples(self, mensagem: str) -> dict:
+        # Aqui é onde a IA entrará futuramente.
+        # Por enquanto, mantém a estrutura de opções para guiar o usuário.
         return {
             "resposta": (
                 "Entendi.\n\n"
